@@ -73,11 +73,16 @@ The Neo4j database contains a **Requirements Management Knowledge Graph** source
 ```
 Chapter (15 nodes)
   └── Article (103 nodes)
-        ├── summary, title, url, word_count
-        └── Chunk (804 nodes)
-              ├── heading, token_count, entity_count
-              ├── embedding (1536 dimensions)
-              └── MENTIONS_ENTITY → Entity nodes
+        ├── article_id, article_title, url, chapter_number, chapter_title
+        ├── Image (163 nodes) via HAS_IMAGE
+        ├── Video (1 node) via HAS_VIDEO
+        └── Webinar (38 nodes) via HAS_WEBINAR
+
+Chunk (2,159 nodes)
+  ├── text, embedding (1536 dim), index
+  ├── FROM_ARTICLE → Article
+  ├── NEXT_CHUNK → Chunk (sequential ordering)
+  └── Entity nodes → MENTIONED_IN → Chunk
 ```
 
 ### Chapters (Topics Covered)
@@ -100,58 +105,65 @@ Chapter (15 nodes)
 | 14 | Semiconductor Development | 3 |
 | 15 | AI in Product Development | 2 |
 
-### Entity Types (3,664 total entities)
+### Entity Types (4,089 total entities)
 
 Entities use multi-labeling (e.g., a node can be both `Entity` and `Concept`):
 
 | Entity Type | Count | Description |
 |-------------|-------|-------------|
-| **Concept** | 1,199 | Abstract concepts (requirements traceability, verification, etc.) |
-| **Challenge** | 680 | Problems and challenges in requirements management |
-| **Bestpractice** | 444 | Best practices and recommendations |
-| **Artifact** | 434 | Deliverables, documents, outputs |
-| **Role** | 194 | Job roles (Product Manager, Systems Engineer, etc.) |
-| **Processstage** | 190 | Process steps and phases |
-| **Standard** | 111 | Industry standards (ISO 26262, FDA, DO-178C, INCOSE, etc.) |
-| **Tool** | 79 | Software tools (Jama Connect, Excel, DOORS, etc.) |
-| **Methodology** | 47 | Methods (Agile, V-Model, Waterfall, etc.) |
-| **Industry** | 14 | Industry sectors (Automotive, Medical, Aerospace, etc.) |
+| **Concept** | 1,523 | Abstract concepts (requirements traceability, verification, etc.) |
+| **Challenge** | 839 | Problems and challenges in requirements management |
+| **Artifact** | 601 | Deliverables, documents, outputs |
+| **Bestpractice** | 330 | Best practices and recommendations |
+| **Processstage** | 285 | Process steps and phases |
+| **Role** | 181 | Job roles (Product Manager, Systems Engineer, etc.) |
+| **Tool** | 159 | Software tools (Jama Connect, Excel, DOORS, etc.) |
+| **Standard** | 123 | Industry standards (ISO 26262, FDA, DO-178C, INCOSE, etc.) |
+| **Methodology** | 30 | Methods (Agile, V-Model, Waterfall, etc.) |
+| **Industry** | 18 | Industry sectors (Automotive, Medical, Aerospace, etc.) |
 
-### GlossaryTerm Nodes (134 terms)
+### Definition Nodes (134 terms)
 
-Definitions for domain-specific terminology:
-- Requirement, Traceability, Baseline, Backlog
-- Acceptance Criteria, Atomic Requirements
-- Application Lifecycle Management (ALM)
-- Build Verification Test, etc.
+Glossary definitions for domain-specific terminology:
+- Properties: `term`, `definition`, `url`, `term_id`
+- Examples: Requirement, Traceability, Baseline, Backlog, Acceptance Criteria, Atomic Requirements, Application Lifecycle Management (ALM), Build Verification Test, etc.
+
+### Media Nodes (New)
+
+| Node Type | Count | Properties |
+|-----------|-------|------------|
+| **Image** | 163 | url, alt_text, context, source_article_id |
+| **Video** | 1 | title, url, platform, video_id, embed_url |
+| **Webinar** | 38 | title, url, description, thumbnail_url |
 
 ### Neo4j Indexes
 
 | Index Name | Type | Target | Properties |
 |------------|------|--------|------------|
 | `chunk_embeddings` | VECTOR | Chunk | embedding (1536 dim, COSINE) |
-| `chunk_fulltext` | FULLTEXT | Chunk | heading |
 | `entity_fulltext` | FULLTEXT | Entity | name, definition |
-| `glossary_fulltext` | FULLTEXT | GlossaryTerm | term, definition |
+| `definition_fulltext` | FULLTEXT | Definition | term, definition |
 
 ### Key Relationships
 
 | Relationship | Count | Pattern | Properties |
 |--------------|-------|---------|------------|
-| `MENTIONS_ENTITY` | 10,260 | Chunk → Entity | - |
-| `MENTIONS` | 5,469 | Article → Entity | confidence |
-| `RELATED_TO_TERM` | 1,586 | Entity → GlossaryTerm | - |
-| `MENTIONS_TERM` | 930 | Chunk → GlossaryTerm | - |
-| `HAS_CHUNK` | 804 | Article → Chunk | - |
+| `MENTIONED_IN` | 8,524 | Entity → Chunk | - |
+| `FROM_ARTICLE` | 2,159 | Chunk → Article | - |
+| `NEXT_CHUNK` | 2,056 | Chunk → Chunk | - |
+| `RELATED_TO` | 807 | Entity → Entity | relationship_nature (optional) |
+| `ADDRESSES` | 703 | Concept → Challenge | effectiveness (optional) |
+| `REQUIRES` | 434 | Entity → Entity/Artifact | - |
+| `COMPONENT_OF` | 283 | Entity → Entity | - |
+| `HAS_IMAGE` | 163 | Article → Image | - |
+| `USED_BY` | 132 | Role → Artifact/Tool | - |
+| `APPLIES_TO` | 139 | Standard/Bestpractice → Industry/Processstage | - |
 | `CONTAINS` | 103 | Chapter → Article | - |
-| `COMPONENT_OF` | 143 | Entity → Entity | confidence, evidence |
-| `RELATED_TO` | 68 | Entity → Entity | confidence, context, evidence |
-| `DEFINED_BY` | 51 | Entity → GlossaryTerm | - |
-| `ADDRESSES` | 47 | Entity → Challenge | confidence, evidence |
-| `USED_BY` | 38 | Tool → Entity | confidence, evidence |
-| `REQUIRES` | 20 | Entity → Entity | confidence, evidence |
-| `ALTERNATIVE_TO` | 17 | Entity → Entity | confidence, evidence |
-| `PREREQUISITE_FOR` | 9 | Entity → Entity | confidence, evidence |
+| `PRODUCES` | 97 | Processstage/Role → Artifact | - |
+| `DEFINES` | 77 | Standard → Concept/Artifact | - |
+| `HAS_WEBINAR` | 38 | Article → Webinar | - |
+| `REFERENCES` | 29 | Article → Article | - |
+| `HAS_VIDEO` | 1 | Article → Video | - |
 
 ### Important Entity Properties
 
@@ -246,54 +258,44 @@ RETURN node, score, sources
 
 ### Graph-Enriched Retrieval Query
 
-Use this pattern with `Neo4jVector.from_existing_index()` to enrich vector search results with graph context:
+Use this pattern with `neo4j-graphrag VectorRetriever` to enrich vector search results with graph context:
 
 ```cypher
-// Retrieval query for vector search enrichment
-// $embedding and $k are provided by langchain_neo4j
-CALL db.index.vector.queryNodes('chunk_embeddings', $k, $embedding)
-YIELD node AS chunk, score
+// Graph-enriched retrieval pattern (Updated 2026-01)
+// Note: MENTIONED_IN direction is Entity → Chunk (not Chunk → Entity)
+// Note: FROM_ARTICLE direction is Chunk → Article (not Article → Chunk)
 
-// Get source article
-MATCH (article:Article)-[:HAS_CHUNK]->(chunk)
+// After vector search returns chunk IDs, enrich with context:
+MATCH (chunk:Chunk)-[:FROM_ARTICLE]->(article:Article)
+WHERE elementId(chunk) IN $chunk_ids
 
-// Get mentioned entities with their types and definitions
-OPTIONAL MATCH (chunk)-[:MENTIONS_ENTITY]->(entity:Entity)
-
-// Get mentioned glossary terms
-OPTIONAL MATCH (chunk)-[:MENTIONS_TERM]->(term:GlossaryTerm)
+// Get entities mentioned in these chunks (Entity points TO Chunk)
+OPTIONAL MATCH (entity)-[:MENTIONED_IN]->(chunk)
+WHERE NOT entity:Chunk AND NOT entity:Article
 
 // Get related entities (one hop)
-OPTIONAL MATCH (entity)-[rel:RELATED_TO|COMPONENT_OF|ADDRESSES]->(related:Entity)
-WHERE rel.confidence >= 0.7
+OPTIONAL MATCH (entity)-[rel:RELATED_TO|COMPONENT_OF|ADDRESSES]->(related)
+WHERE NOT related:Chunk AND NOT related:Article
 
-RETURN 
-    chunk.heading AS heading,
-    chunk.chunk_id AS chunk_id,
-    score,
+RETURN
+    chunk.text AS text,
+    chunk.index AS chunk_index,
     {
-        article_title: article.title,
-        article_summary: article.summary,
+        article_title: article.article_title,
         article_url: article.url,
-        chapter: chunk.chapter_number,
-        token_count: chunk.token_count,
+        chapter_title: article.chapter_title,
         entities: collect(DISTINCT {
             name: entity.name,
-            type: entity.entity_type,
-            definition: entity.definition,
-            benefit: entity.benefit
+            type: labels(entity)[0],
+            display_name: entity.display_name,
+            definition: entity.definition
         })[0..10],
-        glossary_terms: collect(DISTINCT {
-            term: term.term,
-            definition: term.definition
-        })[0..5],
         related_concepts: collect(DISTINCT {
             name: related.name,
             relationship: type(rel),
-            evidence: rel.evidence
+            display_name: related.display_name
         })[0..5]
     } AS metadata
-ORDER BY score DESC
 ```
 
 ### Parent Document Retrieval Query (Essential GraphRAG Ch. 3)
@@ -301,13 +303,13 @@ ORDER BY score DESC
 Matches on smaller chunks but returns full parent context for richer LLM responses:
 
 ```cypher
-// Parent document retrieval pattern
-// Embed smaller chunks, return full parent article context
+// Parent document retrieval pattern (Updated 2026-01)
+// Note: FROM_ARTICLE direction is Chunk → Article
 CALL db.index.vector.queryNodes('chunk_embeddings', $k, $embedding)
 YIELD node AS chunk, score
 
 // Get parent article with full context
-MATCH (article:Article)-[:HAS_CHUNK]->(chunk)
+MATCH (chunk)-[:FROM_ARTICLE]->(article:Article)
 MATCH (chapter:Chapter)-[:CONTAINS]->(article)
 
 // Collect all chunks from matched articles for full context
@@ -315,15 +317,15 @@ WITH DISTINCT article, chapter, max(score) AS best_score
 ORDER BY best_score DESC
 LIMIT 3
 
-MATCH (article)-[:HAS_CHUNK]->(all_chunks:Chunk)
+// Get all chunks for this article using reversed pattern
+MATCH (all_chunks:Chunk)-[:FROM_ARTICLE]->(article)
 
-RETURN 
-    article.title AS title,
-    article.summary AS summary,
+RETURN
+    article.article_title AS title,
     article.url AS url,
     chapter.title AS chapter,
     best_score AS relevance,
-    collect(all_chunks.heading ORDER BY all_chunks.chunk_id)[0..5] AS sections
+    collect(all_chunks.text ORDER BY all_chunks.index)[0..5] AS chunk_texts
 ```
 
 ### Entity-Centric Search Query
@@ -331,30 +333,31 @@ RETURN
 Find entities and their relationships for concept exploration:
 
 ```cypher
-// Search entities by name using fulltext index
-CALL db.index.fulltext.queryNodes('entity_fulltext', $query) 
+// Search entities by name using fulltext index (Updated 2026-01)
+// Note: MENTIONED_IN direction is Entity → Chunk
+CALL db.index.fulltext.queryNodes('entity_fulltext', $query)
 YIELD node AS entity, score
 WHERE score > 0.5
 
 // Get entity relationships
 OPTIONAL MATCH (entity)-[r:RELATED_TO|COMPONENT_OF|ADDRESSES|REQUIRES]->(related)
-OPTIONAL MATCH (entity)<-[:MENTIONS_ENTITY]-(chunk:Chunk)
-OPTIONAL MATCH (entity)-[:DEFINED_BY]->(term:GlossaryTerm)
+WHERE NOT related:Chunk AND NOT related:Article
 
-RETURN 
+// Get chunks where this entity is mentioned (Entity points TO Chunk)
+OPTIONAL MATCH (entity)-[:MENTIONED_IN]->(chunk:Chunk)
+
+RETURN
     entity.name AS name,
-    entity.entity_type AS types,
+    labels(entity) AS types,
+    entity.display_name AS display_name,
     entity.definition AS definition,
-    entity.benefit AS benefit,
     score,
     collect(DISTINCT {
         related_name: related.name,
         relationship: type(r),
-        evidence: r.evidence,
-        confidence: r.confidence
+        display_name: related.display_name
     })[0..5] AS relationships,
-    count(DISTINCT chunk) AS mention_count,
-    term.definition AS glossary_definition
+    count(DISTINCT chunk) AS mention_count
 ORDER BY score DESC
 LIMIT 10
 ```
@@ -409,9 +412,11 @@ LIMIT 10
 Leverages the Chapter structure as natural communities:
 
 ```cypher
-// Community-aware retrieval using Chapter hierarchy
-// Based on MS GraphRAG community detection pattern
-MATCH (ch:Chapter)-[:CONTAINS]->(a:Article)-[:MENTIONS]->(e:Entity)
+// Community-aware retrieval using Chapter hierarchy (Updated 2026-01)
+// Note: Entities point TO chunks via MENTIONED_IN
+// Note: Chunks point TO articles via FROM_ARTICLE
+MATCH (ch:Chapter)-[:CONTAINS]->(a:Article)
+MATCH (e)-[:MENTIONED_IN]->(c:Chunk)-[:FROM_ARTICLE]->(a)
 WHERE e.name CONTAINS $topic OR e.definition CONTAINS $topic
 WITH ch, count(DISTINCT e) AS entity_relevance, collect(DISTINCT e.name)[0..10] AS key_entities
 
@@ -420,16 +425,15 @@ LIMIT 1
 
 // Get comprehensive context from this community (chapter)
 MATCH (ch)-[:CONTAINS]->(a:Article)
-OPTIONAL MATCH (a)-[:HAS_CHUNK]->(c:Chunk)
+OPTIONAL MATCH (c:Chunk)-[:FROM_ARTICLE]->(a)
 
-RETURN 
+RETURN
     ch.title AS community,
     ch.chapter_number AS community_id,
     entity_relevance AS relevance_score,
     key_entities,
     collect(DISTINCT {
-        title: a.title, 
-        summary: a.summary,
+        title: a.article_title,
         url: a.url
     }) AS articles,
     count(DISTINCT c) AS total_chunks
@@ -832,8 +836,8 @@ RETRIEVER_TOOLS: Final[dict[str, str]] = {
         Use for: Regulatory requirements, industry standards, certifications.
         Example: "What standards apply to medical devices?"
     """,
-    "graphrag_glossary": """
-        Term definitions from the glossary.
+    "graphrag_definitions": """
+        Term definitions from the knowledge base.
         Use for: Understanding specific terminology.
         Example: "Define baseline" or "What is an atomic requirement?"
     """,
@@ -862,7 +866,7 @@ Selection Guidelines:
 2. For questions about how concepts relate → graphrag_retrieve
 3. For deep dives into specific entities → graphrag_explore_entity
 4. For regulatory/compliance questions → graphrag_standards
-5. For terminology definitions → graphrag_glossary
+5. For terminology definitions → graphrag_definitions
 6. For aggregations or complex patterns → graphrag_text2cypher
 7. For multi-faceted questions requiring synthesis → graphrag_chat
 
@@ -1192,18 +1196,18 @@ BENCHMARK_DATASET: Final[list[dict]] = [
         "expected_response_contains": ["traceability", "challenge", "address"],
     },
     
-    # Glossary tests
+    # Definition tests
     {
-        "category": "glossary",
+        "category": "definitions",
         "question": "Define baseline",
-        "expected_tool": "graphrag_glossary",
+        "expected_tool": "graphrag_definitions",
         "ground_truth": "A baseline is a formally reviewed and agreed upon set of requirements",
         "expected_response_contains": ["baseline", "definition"],
     },
     {
-        "category": "glossary",
+        "category": "definitions",
         "question": "What is an atomic requirement?",
-        "expected_tool": "graphrag_glossary",
+        "expected_tool": "graphrag_definitions",
         "expected_response_contains": ["atomic", "requirement", "single"],
     },
     
@@ -1368,7 +1372,8 @@ jama-mcp-server-graphrag/
 │       │   ├── text2cypher.py         # Natural language to Cypher
 │       │   ├── generation.py          # Answer generation with citations
 │       │   ├── entities.py            # Entity exploration logic
-│       │   ├── glossary.py            # Glossary lookup logic
+│       │   ├── definitions.py         # Definition/glossary lookup logic
+│       │   ├── standards.py           # Standards lookup logic
 │       │   └── schema.py              # Schema exploration logic
 │       ├── tools/                     # MCP tool implementations (thin wrappers around core/)
 │       │   ├── __init__.py            # Tool registration exports
@@ -1377,7 +1382,7 @@ jama-mcp-server-graphrag/
 │       │   ├── graph_retrieval.py     # Vector + entity enrichment (GraphRAG)
 │       │   ├── entity_explorer.py     # Deep-dive entity exploration
 │       │   ├── standards.py           # Standards/compliance lookup
-│       │   ├── glossary.py            # Glossary term definitions
+│       │   ├── definitions.py         # Definition term lookup
 │       │   ├── text2cypher.py         # Natural language to Cypher
 │       │   ├── schema.py              # Schema exploration tool
 │       │   ├── chat.py                # Full RAG chat workflow
@@ -1387,7 +1392,8 @@ jama-mcp-server-graphrag/
 │       │   ├── chat.py                # POST /chat - Main chat endpoint
 │       │   ├── search.py              # POST /search - Search endpoints
 │       │   ├── schema.py              # GET /schema - Schema exploration
-│       │   ├── glossary.py            # GET /glossary - Glossary lookup
+│       │   ├── definitions.py         # GET /definitions - Definition lookup
+│       │   ├── standards.py           # GET /standards - Standards lookup
 │       │   └── health.py              # GET /health - Health check
 │       ├── agentic/
 │       │   ├── __init__.py
@@ -1423,7 +1429,7 @@ jama-mcp-server-graphrag/
 │   │   ├── test_graph_retrieval.py
 │   │   ├── test_entity_explorer.py
 │   │   ├── test_standards.py
-│   │   ├── test_glossary.py
+│   │   ├── test_definitions.py
 │   │   └── test_text2cypher.py
 │   ├── test_agentic/
 │   │   ├── __init__.py
@@ -1619,7 +1625,7 @@ services:
       - NEO4J_DATABASE=${NEO4J_DATABASE:-neo4j}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
-      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-ada-002}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-small}
       - VECTOR_INDEX_NAME=${VECTOR_INDEX_NAME:-chunk_embeddings}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     env_file:
@@ -1972,7 +1978,7 @@ vercel secrets add neo4j_password "your-password"
 vercel secrets add neo4j_database "neo4j"
 vercel secrets add openai_api_key "sk-your-openai-key"
 vercel secrets add openai_model "gpt-4o"
-vercel secrets add embedding_model "text-embedding-ada-002"
+vercel secrets add embedding_model "text-embedding-3-small"
 vercel secrets add vector_index_name "chunk_embeddings"
 ```
 
@@ -2257,7 +2263,7 @@ class AppConfig:
     neo4j_database: str = "neo4j"
     openai_api_key: str = ""
     chat_model: str = "gpt-4o"
-    embedding_model: str = "text-embedding-ada-002"
+    embedding_model: str = "text-embedding-3-small"
     vector_index_name: str = "chunk_embeddings"
     similarity_k: int = 6
     log_level: str = "INFO"
@@ -2320,7 +2326,7 @@ def get_config() -> AppConfig:
         neo4j_database=os.getenv("NEO4J_DATABASE", "neo4j"),
         openai_api_key=os.getenv("OPENAI_API_KEY", ""),
         chat_model=os.getenv("OPENAI_MODEL", "gpt-4o"),
-        embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-ada-002"),
+        embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
         vector_index_name=os.getenv("VECTOR_INDEX_NAME", "chunk_embeddings"),
         similarity_k=int(os.getenv("SIMILARITY_K", "6")),
         log_level=os.getenv("LOG_LEVEL", "INFO"),
@@ -2610,7 +2616,7 @@ from jama_mcp_server_graphrag.tools import (
     register_chat_tool,
     register_entity_explorer_tool,
     register_evaluate_tool,
-    register_glossary_tool,
+    register_definitions_tool,
     register_graph_retrieval_tool,
     register_hybrid_search_tool,
     register_schema_tool,
@@ -2773,7 +2779,7 @@ mcp = FastMCP(
        Find regulatory standards and compliance requirements.
        Best for: "What standards apply to medical devices?"
     
-    6. **Glossary Terms** (`graphrag_glossary`)
+    6. **Definitions** (`graphrag_definitions`)
        Look up definitions for requirements management terminology.
        Best for: "Define 'baseline'" or "What is an atomic requirement?"
     
@@ -2791,7 +2797,7 @@ mcp = FastMCP(
     
     **Recommended Workflow:**
     1. Start with schema exploration to understand available data
-    2. Use glossary lookup for unfamiliar terms
+    2. Use definitions lookup for unfamiliar terms
     3. Use entity explorer for deep concept understanding
     4. Use RAG chat for complex, multi-faceted questions
     
@@ -2813,7 +2819,7 @@ register_hybrid_search_tool(mcp)
 register_graph_retrieval_tool(mcp)
 register_entity_explorer_tool(mcp)
 register_standards_tool(mcp)
-register_glossary_tool(mcp)
+register_definitions_tool(mcp)
 register_text2cypher_tool(mcp)
 register_chat_tool(mcp)
 register_schema_tool(mcp)
@@ -2892,7 +2898,7 @@ NEO4J_CONNECTION_TIMEOUT=30.0
 # =============================================================================
 OPENAI_API_KEY=sk-your-api-key-here
 OPENAI_MODEL=gpt-4o
-EMBEDDING_MODEL=text-embedding-ada-002
+EMBEDDING_MODEL=text-embedding-3-small
 
 # =============================================================================
 # Vector Index Configuration (aligned with actual database)
@@ -3033,7 +3039,7 @@ Before considering the implementation complete, verify:
 | `graphrag_retrieve` | Graph-enriched retrieval | Understanding concept relationships |
 | `graphrag_explore_entity` | Entity deep-dive | Learning about specific concepts |
 | `graphrag_standards` | Standards lookup | Compliance and regulatory questions |
-| `graphrag_glossary` | Term definitions | Understanding terminology |
+| `graphrag_definitions` | Term definitions | Understanding terminology |
 | `graphrag_text2cypher` | Natural language to Cypher | Complex queries, aggregations |
 | `graphrag_chat` | Full RAG Q&A | Complex, multi-faceted questions |
 | `graphrag_schema` | Schema exploration | Understanding graph structure |
@@ -3060,7 +3066,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from jama_mcp_server_graphrag.config import AppConfig
 from jama_mcp_server_graphrag.neo4j_client import create_driver
-from jama_mcp_server_graphrag.routes import chat, glossary, health, schema, search
+from jama_mcp_server_graphrag.routes import chat, definitions, health, schema, search, standards
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -3102,7 +3108,8 @@ app.include_router(health.router, tags=["health"])
 app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
 app.include_router(search.router, prefix="/api/v1", tags=["search"])
 app.include_router(schema.router, prefix="/api/v1", tags=["schema"])
-app.include_router(glossary.router, prefix="/api/v1", tags=["glossary"])
+app.include_router(definitions.router, prefix="/api/v1", tags=["definitions"])
+app.include_router(standards.router, prefix="/api/v1", tags=["standards"])
 ```
 
 ### Endpoint Specifications
@@ -3229,12 +3236,20 @@ GET /api/v1/schema/entities
 GET /api/v1/schema/relationships
 ```
 
-#### Glossary
+#### Definitions
 
 ```
-GET /api/v1/glossary
-GET /api/v1/glossary/{term}
-GET /api/v1/glossary/search?q=trace
+GET /api/v1/definitions
+GET /api/v1/definitions/{term}
+GET /api/v1/definitions/search?q=trace
+```
+
+#### Standards
+
+```
+GET /api/v1/standards
+GET /api/v1/standards/{name}
+GET /api/v1/standards/industry/{industry}
 ```
 
 ### Route Implementation Pattern
