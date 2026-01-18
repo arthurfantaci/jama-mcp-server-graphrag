@@ -4,6 +4,10 @@ Orchestrates end-to-end evaluation of the RAG pipeline:
 1. Runs queries through the RAG pipeline
 2. Computes evaluation metrics
 3. Reports results to LangSmith (if enabled)
+
+Updated Data Model (2026-01):
+- Uses VectorRetriever and Driver instead of Neo4jGraph/Neo4jVector
+- Extracts actual content from sources for faithfulness evaluation
 """
 
 from __future__ import annotations
@@ -12,7 +16,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from jama_mcp_server_graphrag.core import chat
 from jama_mcp_server_graphrag.evaluation.datasets import (
@@ -23,11 +27,16 @@ from jama_mcp_server_graphrag.evaluation.metrics import RAGMetrics, compute_all_
 from jama_mcp_server_graphrag.observability import traceable
 
 if TYPE_CHECKING:
-    from langchain_neo4j import Neo4jGraph, Neo4jVector
+    from neo4j import Driver
+    from neo4j_graphrag.retrievers import VectorRetriever
 
     from jama_mcp_server_graphrag.config import AppConfig
 
 logger = logging.getLogger(__name__)
+
+# Maximum characters to include in context for evaluation
+# Truncate long content to keep LLM context manageable
+CONTEXT_MAX_CHARS: Final[int] = 1000
 
 
 @dataclass
@@ -37,7 +46,7 @@ class EvaluationResult:
     Attributes:
         sample: The evaluation sample that was tested.
         answer: The generated answer from the RAG pipeline.
-        contexts: The retrieved contexts.
+        contexts: The retrieved contexts (actual content, not just titles).
         metrics: Computed evaluation metrics.
         latency_ms: Time taken to generate answer in milliseconds.
         metadata: Additional metadata about the evaluation.
@@ -89,29 +98,57 @@ class EvaluationReport:
         }
 
 
+def _extract_context_content(sources: list[dict[str, Any]]) -> list[str]:
+    """Extract actual content from sources for evaluation.
+
+    Prioritizes content over title for accurate faithfulness evaluation.
+
+    Args:
+        sources: List of source dictionaries from RAG pipeline.
+
+    Returns:
+        List of context strings with actual content.
+    """
+    contexts = []
+    for source in sources:
+        # Prefer content over title for faithfulness evaluation
+        content = source.get("content", "")
+        if not content:
+            # Fall back to title if no content
+            content = source.get("title", "")
+        if content:
+            # Truncate very long content but keep enough for meaningful evaluation
+            if len(content) > CONTEXT_MAX_CHARS:
+                content = content[:CONTEXT_MAX_CHARS] + "..."
+            contexts.append(content)
+    return contexts
+
+
 class RAGEvaluator:
     """Evaluator for GraphRAG pipeline quality assessment.
 
     Runs evaluation samples through the RAG pipeline and computes
     RAGAS-based metrics with optional LangSmith integration.
+
+    Updated to use VectorRetriever and Driver (2026-01).
     """
 
     def __init__(
         self,
         config: AppConfig,
-        graph: Neo4jGraph,
-        vector_store: Neo4jVector,
+        retriever: VectorRetriever,
+        driver: Driver,
     ) -> None:
         """Initialize the evaluator.
 
         Args:
             config: Application configuration.
-            graph: Neo4jGraph connection.
-            vector_store: Neo4jVector for retrieval.
+            retriever: VectorRetriever for semantic search.
+            driver: Neo4j driver for graph queries.
         """
         self.config = config
-        self.graph = graph
-        self.vector_store = vector_store
+        self.retriever = retriever
+        self.driver = driver
 
     @traceable(name="evaluate_sample", run_type="chain")
     async def evaluate_sample(
@@ -131,11 +168,11 @@ class RAGEvaluator:
         # Time the RAG pipeline
         start_time = time.perf_counter()
 
-        # Run through RAG pipeline
+        # Run through RAG pipeline with new interface
         result = await chat(
             self.config,
-            self.graph,
-            self.vector_store,
+            self.retriever,
+            self.driver,
             sample.question,
             max_sources=5,
         )
@@ -146,7 +183,10 @@ class RAGEvaluator:
         # Extract answer and contexts
         answer = result.get("answer", "")
         sources = result.get("sources", [])
-        contexts = [s.get("title", "") for s in sources]
+
+        # Extract actual content from sources (not just titles)
+        # This is critical for accurate faithfulness evaluation
+        contexts = _extract_context_content(sources)
 
         # Compute evaluation metrics
         metrics = await compute_all_metrics(
@@ -163,7 +203,10 @@ class RAGEvaluator:
             contexts=contexts,
             metrics=metrics,
             latency_ms=latency_ms,
-            metadata={"source_count": len(sources)},
+            metadata={
+                "source_count": len(sources),
+                "entity_count": len(result.get("entities", [])),
+            },
         )
 
     @traceable(name="evaluate_dataset", run_type="chain")
@@ -242,8 +285,8 @@ class RAGEvaluator:
 @traceable(name="evaluate_rag_pipeline", run_type="chain")
 async def evaluate_rag_pipeline(
     config: AppConfig,
-    graph: Neo4jGraph,
-    vector_store: Neo4jVector,
+    retriever: VectorRetriever,
+    driver: Driver,
     *,
     samples: list[EvaluationSample] | None = None,
     max_samples: int | None = None,
@@ -252,13 +295,13 @@ async def evaluate_rag_pipeline(
 
     Args:
         config: Application configuration.
-        graph: Neo4jGraph connection.
-        vector_store: Neo4jVector for retrieval.
+        retriever: VectorRetriever for semantic search.
+        driver: Neo4j driver for graph queries.
         samples: Optional custom evaluation samples.
         max_samples: Optional limit on samples to evaluate.
 
     Returns:
         EvaluationReport with results and aggregate metrics.
     """
-    evaluator = RAGEvaluator(config, graph, vector_store)
+    evaluator = RAGEvaluator(config, retriever, driver)
     return await evaluator.evaluate(samples, max_samples=max_samples)

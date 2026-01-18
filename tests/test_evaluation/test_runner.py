@@ -10,9 +10,11 @@ from jama_mcp_server_graphrag.config import AppConfig
 from jama_mcp_server_graphrag.evaluation.datasets import EvaluationSample
 from jama_mcp_server_graphrag.evaluation.metrics import RAGMetrics
 from jama_mcp_server_graphrag.evaluation.runner import (
+    CONTEXT_MAX_CHARS,
     EvaluationReport,
     EvaluationResult,
     RAGEvaluator,
+    _extract_context_content,
     evaluate_rag_pipeline,
 )
 
@@ -32,14 +34,14 @@ def mock_config() -> AppConfig:
 
 
 @pytest.fixture
-def mock_graph() -> MagicMock:
-    """Create a mock Neo4j graph."""
+def mock_retriever() -> MagicMock:
+    """Create a mock VectorRetriever."""
     return MagicMock()
 
 
 @pytest.fixture
-def mock_vector_store() -> MagicMock:
-    """Create a mock vector store."""
+def mock_driver() -> MagicMock:
+    """Create a mock Neo4j Driver."""
     return MagicMock()
 
 
@@ -63,6 +65,47 @@ def sample_metrics() -> RAGMetrics:
         context_precision=0.8,
         context_recall=0.75,
     )
+
+
+class TestExtractContextContent:
+    """Tests for _extract_context_content helper function."""
+
+    def test_extracts_content_field(self) -> None:
+        """Test extracting content from sources."""
+        sources = [
+            {"title": "Title 1", "content": "Content 1"},
+            {"title": "Title 2", "content": "Content 2"},
+        ]
+        contexts = _extract_context_content(sources)
+        assert contexts == ["Content 1", "Content 2"]
+
+    def test_falls_back_to_title(self) -> None:
+        """Test falling back to title when no content."""
+        sources = [
+            {"title": "Title 1"},
+            {"title": "Title 2", "content": ""},
+        ]
+        contexts = _extract_context_content(sources)
+        assert contexts == ["Title 1", "Title 2"]
+
+    def test_truncates_long_content(self) -> None:
+        """Test truncating very long content."""
+        long_content = "x" * 2000
+        sources = [{"content": long_content}]
+        contexts = _extract_context_content(sources)
+        assert len(contexts[0]) == CONTEXT_MAX_CHARS + 3  # +3 for "..."
+        assert contexts[0].endswith("...")
+
+    def test_handles_empty_sources(self) -> None:
+        """Test handling empty sources list."""
+        contexts = _extract_context_content([])
+        assert contexts == []
+
+    def test_skips_empty_content_and_title(self) -> None:
+        """Test skipping sources with no content or title."""
+        sources = [{"url": "http://example.com"}]
+        contexts = _extract_context_content(sources)
+        assert contexts == []
 
 
 class TestEvaluationResult:
@@ -168,26 +211,26 @@ class TestRAGEvaluator:
     def test_evaluator_creation(
         self,
         mock_config: AppConfig,
-        mock_graph: MagicMock,
-        mock_vector_store: MagicMock,
+        mock_retriever: MagicMock,
+        mock_driver: MagicMock,
     ) -> None:
         """Test creating an evaluator."""
-        evaluator = RAGEvaluator(mock_config, mock_graph, mock_vector_store)
+        evaluator = RAGEvaluator(mock_config, mock_retriever, mock_driver)
 
         assert evaluator.config == mock_config
-        assert evaluator.graph == mock_graph
-        assert evaluator.vector_store == mock_vector_store
+        assert evaluator.retriever == mock_retriever
+        assert evaluator.driver == mock_driver
 
     @pytest.mark.asyncio
     async def test_evaluate_sample(
         self,
         mock_config: AppConfig,
-        mock_graph: MagicMock,
-        mock_vector_store: MagicMock,
+        mock_retriever: MagicMock,
+        mock_driver: MagicMock,
         sample_evaluation_sample: EvaluationSample,
     ) -> None:
         """Test evaluating a single sample."""
-        evaluator = RAGEvaluator(mock_config, mock_graph, mock_vector_store)
+        evaluator = RAGEvaluator(mock_config, mock_retriever, mock_driver)
 
         with (
             patch(
@@ -201,7 +244,7 @@ class TestRAGEvaluator:
         ):
             mock_chat.return_value = {
                 "answer": "Generated answer",
-                "sources": [{"title": "Source 1"}],
+                "sources": [{"title": "Source 1", "content": "Content 1"}],
             }
             mock_metrics.return_value = RAGMetrics(
                 faithfulness=0.9,
@@ -215,17 +258,18 @@ class TestRAGEvaluator:
             assert result.answer == "Generated answer"
             assert result.metrics.faithfulness == 0.9
             assert result.latency_ms > 0
+            assert result.contexts == ["Content 1"]  # Verify content extraction
 
     @pytest.mark.asyncio
     async def test_evaluate_dataset(
         self,
         mock_config: AppConfig,
-        mock_graph: MagicMock,
-        mock_vector_store: MagicMock,
+        mock_retriever: MagicMock,
+        mock_driver: MagicMock,
         sample_evaluation_sample: EvaluationSample,
     ) -> None:
         """Test evaluating a dataset."""
-        evaluator = RAGEvaluator(mock_config, mock_graph, mock_vector_store)
+        evaluator = RAGEvaluator(mock_config, mock_retriever, mock_driver)
 
         with (
             patch(
@@ -264,8 +308,8 @@ class TestEvaluateRagPipeline:
     async def test_convenience_function(
         self,
         mock_config: AppConfig,
-        mock_graph: MagicMock,
-        mock_vector_store: MagicMock,
+        mock_retriever: MagicMock,
+        mock_driver: MagicMock,
         sample_evaluation_sample: EvaluationSample,
     ) -> None:
         """Test the convenience function."""
@@ -292,8 +336,8 @@ class TestEvaluateRagPipeline:
 
             report = await evaluate_rag_pipeline(
                 mock_config,
-                mock_graph,
-                mock_vector_store,
+                mock_retriever,
+                mock_driver,
                 samples=[sample_evaluation_sample],
                 max_samples=1,
             )

@@ -24,22 +24,26 @@ from jama_mcp_server_graphrag.evaluation.datasets import (
 )
 from jama_mcp_server_graphrag.evaluation.metrics import (
     RAGMetrics,
+    compute_all_metrics,
     compute_answer_relevancy,
     compute_context_precision,
     compute_context_recall,
     compute_faithfulness,
 )
 from jama_mcp_server_graphrag.evaluation.runner import (
+    EvaluationReport,
     EvaluationResult,
     RAGEvaluator,
     evaluate_rag_pipeline,
 )
 
 __all__ = [
+    "EvaluationReport",
     "EvaluationResult",
     "EvaluationSample",
     "RAGEvaluator",
     "RAGMetrics",
+    "compute_all_metrics",
     "compute_answer_relevancy",
     "compute_context_precision",
     "compute_context_recall",

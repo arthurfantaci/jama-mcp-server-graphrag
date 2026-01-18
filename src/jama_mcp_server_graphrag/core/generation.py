@@ -117,6 +117,7 @@ async def generate_answer(  # noqa: PLR0913
         sources.append(
             {
                 "title": title,
+                "content": content,  # Include content for evaluation metrics
                 "url": url,
                 "chunk_id": result["metadata"].get("chunk_id"),
                 "relevance_score": result["score"],
