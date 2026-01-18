@@ -96,9 +96,7 @@ async def generate_answer(  # noqa: PLR0913
     if definitions:
         for defn in definitions:
             if defn.get("score", 0) >= DEFINITION_RELEVANCE_THRESHOLD:
-                context_parts.append(
-                    f"[Definition: {defn['term']}]\n{defn['definition']}\n"
-                )
+                context_parts.append(f"[Definition: {defn['term']}]\n{defn['definition']}\n")
                 # Add definition as a source
                 sources.append(
                     {
