@@ -122,7 +122,7 @@ def mock_retriever() -> MagicMock:
             {
                 "text": "Test content about requirements",
                 "metadata": {
-                    "element_id": "4:abc:123",
+                    "id": "4:abc:123",  # neo4j-graphrag uses 'id' not 'element_id'
                     "title": "Test Article",
                     "score": 0.95,
                 },
@@ -130,7 +130,7 @@ def mock_retriever() -> MagicMock:
             {
                 "text": "More content about traceability",
                 "metadata": {
-                    "element_id": "4:abc:456",
+                    "id": "4:abc:456",  # neo4j-graphrag uses 'id' not 'element_id'
                     "title": "Another Article",
                     "score": 0.85,
                 },

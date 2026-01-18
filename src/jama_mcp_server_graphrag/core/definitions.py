@@ -111,25 +111,31 @@ async def search_terms(
     logger.info("Searching definition terms: '%s', limit=%d", query, limit)
 
     with driver.session() as session:
+        # Use bidirectional matching: term in query OR query in term/definition
+        # This handles both "Analysis of Alternatives" and
+        # "What does the term Analysis of Alternatives stand for?"
         result = session.run(
             """
             MATCH (d:Definition)
-            WHERE toLower(d.term) CONTAINS toLower($query)
-               OR toLower(d.definition) CONTAINS toLower($query)
+            WHERE toLower(d.term) CONTAINS toLower($search_term)
+               OR toLower(d.definition) CONTAINS toLower($search_term)
+               OR toLower($search_term) CONTAINS toLower(d.term)
             WITH d, CASE
-                WHEN toLower(d.term) = toLower($query) THEN 1.0
-                WHEN toLower(d.term) STARTS WITH toLower($query) THEN 0.9
-                WHEN toLower(d.term) CONTAINS toLower($query) THEN 0.7
+                WHEN toLower(d.term) = toLower($search_term) THEN 1.0
+                WHEN toLower($search_term) CONTAINS toLower(d.term)
+                     AND size(d.term) > 3 THEN 0.85
+                WHEN toLower(d.term) STARTS WITH toLower($search_term) THEN 0.8
+                WHEN toLower(d.term) CONTAINS toLower($search_term) THEN 0.7
                 ELSE 0.5
             END AS score
             RETURN d.term AS term,
                    d.definition AS definition,
                    d.url AS url,
                    score
-            ORDER BY score DESC, d.term
+            ORDER BY score DESC, size(d.term) DESC, d.term
             LIMIT $limit
             """,
-            query=query,
+            search_term=query,
             limit=limit,
         )
 

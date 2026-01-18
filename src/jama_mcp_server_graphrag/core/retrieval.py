@@ -17,6 +17,7 @@ Retrieval Patterns:
 
 from __future__ import annotations
 
+import ast
 import logging
 import os
 from typing import TYPE_CHECKING, Any
@@ -96,11 +97,12 @@ async def vector_search(
     results = retriever.search(query_text=query, top_k=limit)
 
     # Get article context for each chunk
+    # Note: neo4j-graphrag VectorRetriever returns 'id' not 'element_id'
     chunk_ids = []
     for item in results.items:
-        element_id = item.metadata.get("element_id") if item.metadata else None
-        if element_id:
-            chunk_ids.append(element_id)
+        node_id = item.metadata.get("id") if item.metadata else None
+        if node_id:
+            chunk_ids.append(node_id)
 
     # Fetch article metadata for chunks
     article_context = {}
@@ -129,18 +131,28 @@ async def vector_search(
     # Format results
     formatted = []
     for item in results.items:
-        element_id = item.metadata.get("element_id") if item.metadata else None
+        # neo4j-graphrag VectorRetriever returns 'id' not 'element_id'
+        node_id = item.metadata.get("id") if item.metadata else None
         score = item.metadata.get("score", 0.0) if item.metadata else 0.0
 
         # Extract text content
+        # VectorRetriever may return content as dict or as string representation of dict
         if isinstance(item.content, dict):
             content = item.content.get("text", "")
+        elif isinstance(item.content, str):
+            # Content might be a string like "{'index': 3, 'text': '...'}"
+            # Try to extract text from it
+            try:
+                parsed = ast.literal_eval(item.content)
+                content = parsed.get("text", "") if isinstance(parsed, dict) else item.content
+            except (ValueError, SyntaxError):
+                content = item.content
         else:
             content = str(item.content) if item.content else ""
 
         # Build metadata
-        metadata = article_context.get(element_id, {})
-        metadata["chunk_id"] = element_id
+        metadata = article_context.get(node_id, {})
+        metadata["chunk_id"] = node_id
         if item.metadata:
             metadata["chunk_index"] = item.metadata.get("index")
 

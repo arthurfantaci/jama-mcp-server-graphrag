@@ -16,6 +16,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 
+from jama_mcp_server_graphrag.core.definitions import search_terms
 from jama_mcp_server_graphrag.core.retrieval import graph_enriched_search
 from jama_mcp_server_graphrag.observability import traceable
 
@@ -26,6 +27,8 @@ if TYPE_CHECKING:
     from jama_mcp_server_graphrag.config import AppConfig
 
 logger = logging.getLogger(__name__)
+
+DEFINITION_RELEVANCE_THRESHOLD: Final[float] = 0.5
 
 RAG_SYSTEM_PROMPT: Final[str] = """You are a requirements management expert assistant.
 Your knowledge comes from Jama Software's "Essential Guide to Requirements Management
@@ -72,7 +75,11 @@ async def generate_answer(  # noqa: PLR0913
     """
     logger.info("Generating RAG answer for: '%s'", question)
 
-    # Retrieve relevant context
+    # Search for relevant definitions/glossary terms
+    # This helps answer questions like "What does X mean?" or "What is the definition of Y?"
+    definitions = await search_terms(driver, question, limit=3)
+
+    # Retrieve relevant context from chunks
     search_results = await graph_enriched_search(
         retriever,
         driver,
@@ -84,6 +91,24 @@ async def generate_answer(  # noqa: PLR0913
     context_parts = []
     sources = []
     all_entities: set[str] = set()
+
+    # Add definitions to context first (if any found)
+    if definitions:
+        for defn in definitions:
+            if defn.get("score", 0) >= DEFINITION_RELEVANCE_THRESHOLD:
+                context_parts.append(
+                    f"[Definition: {defn['term']}]\n{defn['definition']}\n"
+                )
+                # Add definition as a source
+                sources.append(
+                    {
+                        "title": f"Definition: {defn['term']}",
+                        "url": defn.get("url", ""),
+                        "chunk_id": None,
+                        "relevance_score": defn.get("score", 0.5),
+                    }
+                )
+                all_entities.add(defn["term"])
 
     for i, result in enumerate(search_results, 1):
         title = result["metadata"].get("title", "Unknown")
