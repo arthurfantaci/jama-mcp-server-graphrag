@@ -23,17 +23,22 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)  # Override any cached env vars
 
-from jama_mcp_server_graphrag.config import get_config
-from jama_mcp_server_graphrag.core.retrieval import create_vector_retriever
-from jama_mcp_server_graphrag.evaluation import evaluate_rag_pipeline
-from jama_mcp_server_graphrag.neo4j_client import create_driver
-from jama_mcp_server_graphrag.observability import configure_tracing
+from jama_mcp_server_graphrag.config import get_config  # noqa: E402
+from jama_mcp_server_graphrag.core.retrieval import create_vector_retriever  # noqa: E402
+from jama_mcp_server_graphrag.evaluation import evaluate_rag_pipeline  # noqa: E402
+from jama_mcp_server_graphrag.neo4j_client import create_driver  # noqa: E402
+from jama_mcp_server_graphrag.observability import configure_tracing  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+def save_results(output_file: Path, report_dict: dict) -> None:
+    """Save evaluation results to JSON file (sync helper for async context)."""
+    output_file.write_text(json.dumps(report_dict, indent=2))
 
 
 async def main(max_samples: int | None = None) -> None:
@@ -86,10 +91,9 @@ async def main(max_samples: int | None = None) -> None:
             print(f"Latency: {result.latency_ms:.1f}ms")
             print(f"Metrics: {result.metrics.to_dict()}")
 
-        # Save to file
+        # Save to file using sync helper
         output_file = Path("evaluation_results.json")
-        with open(output_file, "w") as f:
-            json.dump(report.to_dict(), f, indent=2)
+        save_results(output_file, report.to_dict())
         logger.info("Results saved to %s", output_file)
 
         print("\n" + "=" * 60)
