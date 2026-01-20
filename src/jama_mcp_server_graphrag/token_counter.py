@@ -61,6 +61,7 @@ COST_THRESHOLDS: Final[dict[str, float]] = {
 # MODEL PRICING (per 1M tokens, as of 2024)
 # =============================================================================
 
+
 @dataclass(frozen=True)
 class ModelPricing:
     """Pricing information for a model.
