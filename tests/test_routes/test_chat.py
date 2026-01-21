@@ -14,8 +14,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from jama_mcp_server_graphrag.core.generation import StreamEvent, StreamEventType
-from jama_mcp_server_graphrag.routes.chat import router
+
+from jama_graphrag_api.core.generation import StreamEvent, StreamEventType
+from jama_graphrag_api.routes.chat import router
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -154,7 +155,7 @@ class TestChatEndpointStreaming:
         """Test that the endpoint returns text/event-stream content type."""
         events = create_mock_stream_events()
 
-        with patch("jama_mcp_server_graphrag.routes.chat.stream_chat") as mock_stream:
+        with patch("jama_graphrag_api.routes.chat.stream_chat") as mock_stream:
             mock_stream.return_value = mock_stream_chat_generator(events)
 
             response = client.post(
@@ -169,7 +170,7 @@ class TestChatEndpointStreaming:
         """Test that SSE-specific headers are set correctly."""
         events = create_mock_stream_events()
 
-        with patch("jama_mcp_server_graphrag.routes.chat.stream_chat") as mock_stream:
+        with patch("jama_graphrag_api.routes.chat.stream_chat") as mock_stream:
             mock_stream.return_value = mock_stream_chat_generator(events)
 
             response = client.post(
@@ -184,7 +185,7 @@ class TestChatEndpointStreaming:
         """Test that the first SSE event is the sources event."""
         events = create_mock_stream_events()
 
-        with patch("jama_mcp_server_graphrag.routes.chat.stream_chat") as mock_stream:
+        with patch("jama_graphrag_api.routes.chat.stream_chat") as mock_stream:
             mock_stream.return_value = mock_stream_chat_generator(events)
 
             response = client.post(
@@ -204,7 +205,7 @@ class TestChatEndpointStreaming:
         """Test that token events are emitted during streaming."""
         events = create_mock_stream_events(answer="Test answer")
 
-        with patch("jama_mcp_server_graphrag.routes.chat.stream_chat") as mock_stream:
+        with patch("jama_graphrag_api.routes.chat.stream_chat") as mock_stream:
             mock_stream.return_value = mock_stream_chat_generator(events)
 
             response = client.post(
@@ -223,7 +224,7 @@ class TestChatEndpointStreaming:
         """Test that the last SSE event is the done event."""
         events = create_mock_stream_events()
 
-        with patch("jama_mcp_server_graphrag.routes.chat.stream_chat") as mock_stream:
+        with patch("jama_graphrag_api.routes.chat.stream_chat") as mock_stream:
             mock_stream.return_value = mock_stream_chat_generator(events)
 
             response = client.post(
@@ -242,7 +243,7 @@ class TestChatEndpointStreaming:
         """Test that events are emitted in correct order."""
         events = create_mock_stream_events(answer="One two three")
 
-        with patch("jama_mcp_server_graphrag.routes.chat.stream_chat") as mock_stream:
+        with patch("jama_graphrag_api.routes.chat.stream_chat") as mock_stream:
             mock_stream.return_value = mock_stream_chat_generator(events)
 
             response = client.post(
@@ -264,7 +265,7 @@ class TestChatEndpointStreaming:
         """Test that conversation history is passed to stream_chat."""
         events = create_mock_stream_events(answer="Follow up answer")
 
-        with patch("jama_mcp_server_graphrag.routes.chat.stream_chat") as mock_stream:
+        with patch("jama_graphrag_api.routes.chat.stream_chat") as mock_stream:
             mock_stream.return_value = mock_stream_chat_generator(events)
 
             response = client.post(
@@ -321,7 +322,7 @@ class TestChatEndpointStreaming:
         """Test that custom options are passed to stream_chat."""
         events = create_mock_stream_events()
 
-        with patch("jama_mcp_server_graphrag.routes.chat.stream_chat") as mock_stream:
+        with patch("jama_graphrag_api.routes.chat.stream_chat") as mock_stream:
             mock_stream.return_value = mock_stream_chat_generator(events)
 
             response = client.post(
@@ -347,7 +348,7 @@ class TestChatEndpointStreaming:
         """Test that empty sources list is handled gracefully."""
         events = create_mock_stream_events(sources=[], entities=[], images=[])
 
-        with patch("jama_mcp_server_graphrag.routes.chat.stream_chat") as mock_stream:
+        with patch("jama_graphrag_api.routes.chat.stream_chat") as mock_stream:
             mock_stream.return_value = mock_stream_chat_generator(events)
 
             response = client.post(
@@ -373,7 +374,7 @@ class TestChatEndpointStreaming:
             )
         ]
 
-        with patch("jama_mcp_server_graphrag.routes.chat.stream_chat") as mock_stream:
+        with patch("jama_graphrag_api.routes.chat.stream_chat") as mock_stream:
             mock_stream.return_value = mock_stream_chat_generator(error_events)
 
             response = client.post(
@@ -396,7 +397,7 @@ class TestChatMessageModel:
         """Test that 'user' role is accepted."""
         events = create_mock_stream_events()
 
-        with patch("jama_mcp_server_graphrag.routes.chat.stream_chat") as mock_stream:
+        with patch("jama_graphrag_api.routes.chat.stream_chat") as mock_stream:
             mock_stream.return_value = mock_stream_chat_generator(events)
 
             response = client.post(
@@ -415,7 +416,7 @@ class TestChatMessageModel:
         """Test that 'assistant' role is accepted."""
         events = create_mock_stream_events()
 
-        with patch("jama_mcp_server_graphrag.routes.chat.stream_chat") as mock_stream:
+        with patch("jama_graphrag_api.routes.chat.stream_chat") as mock_stream:
             mock_stream.return_value = mock_stream_chat_generator(events)
 
             response = client.post(

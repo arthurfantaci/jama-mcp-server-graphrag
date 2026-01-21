@@ -5,13 +5,13 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-from jama_mcp_server_graphrag.core.generation import (
+
+from jama_graphrag_api.core.generation import (
     StreamEvent,
     StreamEventType,
     generate_answer,
     stream_chat,
 )
-
 from tests.conftest import create_llm_mock
 
 # =============================================================================
@@ -105,9 +105,9 @@ class TestGenerateAnswer:
     ) -> None:
         """Test that generate_answer returns a complete response."""
         with (
-            patch("jama_mcp_server_graphrag.core.generation.graph_enriched_search") as mock_search,
-            patch("jama_mcp_server_graphrag.core.generation.search_terms") as mock_terms,
-            patch("jama_mcp_server_graphrag.core.generation.ChatOpenAI") as mock_llm_class,
+            patch("jama_graphrag_api.core.generation.graph_enriched_search") as mock_search,
+            patch("jama_graphrag_api.core.generation.search_terms") as mock_terms,
+            patch("jama_graphrag_api.core.generation.ChatOpenAI") as mock_llm_class,
         ):
             mock_search.return_value = mock_search_results
             mock_terms.return_value = []
@@ -138,9 +138,9 @@ class TestGenerateAnswer:
     ) -> None:
         """Test that sources are properly formatted."""
         with (
-            patch("jama_mcp_server_graphrag.core.generation.graph_enriched_search") as mock_search,
-            patch("jama_mcp_server_graphrag.core.generation.search_terms") as mock_terms,
-            patch("jama_mcp_server_graphrag.core.generation.ChatOpenAI") as mock_llm_class,
+            patch("jama_graphrag_api.core.generation.graph_enriched_search") as mock_search,
+            patch("jama_graphrag_api.core.generation.search_terms") as mock_terms,
+            patch("jama_graphrag_api.core.generation.ChatOpenAI") as mock_llm_class,
         ):
             mock_search.return_value = mock_search_results
             mock_terms.return_value = []
@@ -166,9 +166,9 @@ class TestGenerateAnswer:
     ) -> None:
         """Test that retrieval_limit parameter is passed to search."""
         with (
-            patch("jama_mcp_server_graphrag.core.generation.graph_enriched_search") as mock_search,
-            patch("jama_mcp_server_graphrag.core.generation.search_terms") as mock_terms,
-            patch("jama_mcp_server_graphrag.core.generation.ChatOpenAI") as mock_llm_class,
+            patch("jama_graphrag_api.core.generation.graph_enriched_search") as mock_search,
+            patch("jama_graphrag_api.core.generation.search_terms") as mock_terms,
+            patch("jama_graphrag_api.core.generation.ChatOpenAI") as mock_llm_class,
         ):
             mock_search.return_value = []
             mock_terms.return_value = []
@@ -205,9 +205,9 @@ class TestStreamChat:
     ) -> None:
         """Test that the first event is the sources event."""
         with (
-            patch("jama_mcp_server_graphrag.core.generation.graph_enriched_search") as mock_search,
-            patch("jama_mcp_server_graphrag.core.generation.search_terms") as mock_terms,
-            patch("jama_mcp_server_graphrag.core.generation.ChatOpenAI") as mock_llm_class,
+            patch("jama_graphrag_api.core.generation.graph_enriched_search") as mock_search,
+            patch("jama_graphrag_api.core.generation.search_terms") as mock_terms,
+            patch("jama_graphrag_api.core.generation.ChatOpenAI") as mock_llm_class,
         ):
             mock_search.return_value = mock_search_results
             mock_terms.return_value = []
@@ -239,9 +239,9 @@ class TestStreamChat:
     ) -> None:
         """Test that token events are emitted during streaming."""
         with (
-            patch("jama_mcp_server_graphrag.core.generation.graph_enriched_search") as mock_search,
-            patch("jama_mcp_server_graphrag.core.generation.search_terms") as mock_terms,
-            patch("jama_mcp_server_graphrag.core.generation.ChatOpenAI") as mock_llm_class,
+            patch("jama_graphrag_api.core.generation.graph_enriched_search") as mock_search,
+            patch("jama_graphrag_api.core.generation.search_terms") as mock_terms,
+            patch("jama_graphrag_api.core.generation.ChatOpenAI") as mock_llm_class,
         ):
             mock_search.return_value = mock_search_results
             mock_terms.return_value = []
@@ -273,9 +273,9 @@ class TestStreamChat:
     ) -> None:
         """Test that the last event is the done event with full answer."""
         with (
-            patch("jama_mcp_server_graphrag.core.generation.graph_enriched_search") as mock_search,
-            patch("jama_mcp_server_graphrag.core.generation.search_terms") as mock_terms,
-            patch("jama_mcp_server_graphrag.core.generation.ChatOpenAI") as mock_llm_class,
+            patch("jama_graphrag_api.core.generation.graph_enriched_search") as mock_search,
+            patch("jama_graphrag_api.core.generation.search_terms") as mock_terms,
+            patch("jama_graphrag_api.core.generation.ChatOpenAI") as mock_llm_class,
         ):
             mock_search.return_value = mock_search_results
             mock_terms.return_value = []
@@ -309,9 +309,9 @@ class TestStreamChat:
     ) -> None:
         """Test that events are emitted in correct order: sources -> tokens -> done."""
         with (
-            patch("jama_mcp_server_graphrag.core.generation.graph_enriched_search") as mock_search,
-            patch("jama_mcp_server_graphrag.core.generation.search_terms") as mock_terms,
-            patch("jama_mcp_server_graphrag.core.generation.ChatOpenAI") as mock_llm_class,
+            patch("jama_graphrag_api.core.generation.graph_enriched_search") as mock_search,
+            patch("jama_graphrag_api.core.generation.search_terms") as mock_terms,
+            patch("jama_graphrag_api.core.generation.ChatOpenAI") as mock_llm_class,
         ):
             mock_search.return_value = mock_search_results
             mock_terms.return_value = []
@@ -342,9 +342,9 @@ class TestStreamChat:
     ) -> None:
         """Test that max_sources is passed to graph_enriched_search."""
         with (
-            patch("jama_mcp_server_graphrag.core.generation.graph_enriched_search") as mock_search,
-            patch("jama_mcp_server_graphrag.core.generation.search_terms") as mock_terms,
-            patch("jama_mcp_server_graphrag.core.generation.ChatOpenAI") as mock_llm_class,
+            patch("jama_graphrag_api.core.generation.graph_enriched_search") as mock_search,
+            patch("jama_graphrag_api.core.generation.search_terms") as mock_terms,
+            patch("jama_graphrag_api.core.generation.ChatOpenAI") as mock_llm_class,
         ):
             mock_search.return_value = []
             mock_terms.return_value = []
@@ -374,9 +374,9 @@ class TestStreamChat:
     ) -> None:
         """Test that conversation history is passed to the chain."""
         with (
-            patch("jama_mcp_server_graphrag.core.generation.graph_enriched_search") as mock_search,
-            patch("jama_mcp_server_graphrag.core.generation.search_terms") as mock_terms,
-            patch("jama_mcp_server_graphrag.core.generation.ChatOpenAI") as mock_llm_class,
+            patch("jama_graphrag_api.core.generation.graph_enriched_search") as mock_search,
+            patch("jama_graphrag_api.core.generation.search_terms") as mock_terms,
+            patch("jama_graphrag_api.core.generation.ChatOpenAI") as mock_llm_class,
         ):
             mock_search.return_value = mock_search_results
             mock_terms.return_value = []
@@ -411,9 +411,9 @@ class TestStreamChat:
     ) -> None:
         """Test that streaming works when no results are found."""
         with (
-            patch("jama_mcp_server_graphrag.core.generation.graph_enriched_search") as mock_search,
-            patch("jama_mcp_server_graphrag.core.generation.search_terms") as mock_terms,
-            patch("jama_mcp_server_graphrag.core.generation.ChatOpenAI") as mock_llm_class,
+            patch("jama_graphrag_api.core.generation.graph_enriched_search") as mock_search,
+            patch("jama_graphrag_api.core.generation.search_terms") as mock_terms,
+            patch("jama_graphrag_api.core.generation.ChatOpenAI") as mock_llm_class,
         ):
             mock_search.return_value = []
             mock_terms.return_value = []
