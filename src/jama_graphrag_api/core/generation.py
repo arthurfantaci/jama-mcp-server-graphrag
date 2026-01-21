@@ -66,7 +66,7 @@ class StreamEvent:
 
 
 @traceable(name="generate_answer", run_type="chain")
-async def generate_answer(  # noqa: PLR0913, PLR0912
+async def generate_answer(
     config: AppConfig,
     retriever: VectorRetriever,
     driver: Driver,
@@ -216,7 +216,7 @@ async def generate_answer(  # noqa: PLR0913, PLR0912
     return response
 
 
-def _build_context_from_results(  # noqa: PLR0912
+def _build_context_from_results(
     definitions: list[dict[str, Any]],
     search_results: list[dict[str, Any]],
     *,
@@ -313,7 +313,7 @@ def _build_context_from_results(  # noqa: PLR0912
 
 
 @traceable(name="stream_chat", run_type="chain")
-async def stream_chat(  # noqa: PLR0913
+async def stream_chat(
     config: AppConfig,
     retriever: VectorRetriever,
     driver: Driver,

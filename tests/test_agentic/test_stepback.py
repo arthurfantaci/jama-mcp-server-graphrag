@@ -5,8 +5,8 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from jama_mcp_server_graphrag.agentic.stepback import generate_stepback_query
+
 from tests.conftest import create_llm_mock
 
 # =============================================================================

@@ -109,9 +109,8 @@ def _assign_difficulty(
         return DifficultyLevel.MEDIUM
 
     # Simple definitional questions are easy
-    if category == QueryCategory.DEFINITIONAL:
-        if question.startswith(("What is", "Define")):
-            return DifficultyLevel.EASY
+    if category == QueryCategory.DEFINITIONAL and question.startswith(("What is", "Define")):
+        return DifficultyLevel.EASY
 
     # Analytical questions require reasoning
     if category == QueryCategory.ANALYTICAL:

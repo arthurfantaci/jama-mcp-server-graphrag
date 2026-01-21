@@ -89,10 +89,7 @@ def check_no_hallucination_markers(answer: str) -> bool:
     ]
 
     answer_lower = answer.lower()
-    for phrase in hallucination_phrases:
-        if phrase in answer_lower:
-            return False
-    return True
+    return all(phrase not in answer_lower for phrase in hallucination_phrases)
 
 
 # =============================================================================
@@ -193,7 +190,7 @@ class TestAnswerGeneration:
         mock_chat_response: dict[str, Any],
     ) -> None:
         """Test answer quality for definitional queries."""
-        example = definitional_examples[0]
+        definitional_examples[0]
 
         # Simulate chat response
         answer = mock_chat_response["answer"]
@@ -232,7 +229,6 @@ class TestAnswerFaithfulness:
 
     def test_answer_grounded_in_context(self) -> None:
         """Test that answers are grounded in retrieved context."""
-        context = "ISO 26262 defines ASIL levels A through D for automotive safety."
         answer = "ISO 26262 defines four ASIL levels: A, B, C, and D."
 
         # Answer should mention key terms from context
@@ -244,7 +240,6 @@ class TestAnswerFaithfulness:
 
     def test_answer_not_contradicting_context(self) -> None:
         """Test that answers don't contradict context."""
-        context = "ISO 26262 is for automotive functional safety."
         answer = "ISO 26262 is an automotive safety standard."
 
         # Simple consistency check - both mention automotive and safety
@@ -257,7 +252,6 @@ class TestAnswerRelevancy:
 
     def test_answer_addresses_question(self) -> None:
         """Test that answer addresses the question asked."""
-        question = "What is requirements traceability?"
         answer = "Requirements traceability is the ability to link requirements to other artifacts."
 
         # Answer should mention the concept being asked about
@@ -266,13 +260,11 @@ class TestAnswerRelevancy:
     def test_answer_format_matches_question_type(self) -> None:
         """Test that answer format matches question type."""
         # Definitional question should get a definition
-        def_question = "What is verification?"
         def_answer = "Verification is the process of confirming the product is built correctly."
 
         assert "is" in def_answer.lower()  # Definitional structure
 
         # Procedural question should get steps/process
-        proc_question = "How do I implement traceability?"
         proc_answer = "To implement traceability: 1) Define link types, 2) Establish baselines..."
 
         # Procedural answers often have numbered steps or action words

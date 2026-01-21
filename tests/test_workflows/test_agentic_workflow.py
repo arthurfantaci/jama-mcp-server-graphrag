@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from jama_mcp_server_graphrag.workflows.agentic_workflow import (
     critique_node,
     refine_query_node,

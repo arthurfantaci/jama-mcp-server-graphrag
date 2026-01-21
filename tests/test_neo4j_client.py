@@ -5,8 +5,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-from neo4j.exceptions import AuthError, ServiceUnavailable
-
 from jama_mcp_server_graphrag.exceptions import Neo4jConnectionError
 from jama_mcp_server_graphrag.neo4j_client import (
     create_driver,
@@ -14,6 +12,7 @@ from jama_mcp_server_graphrag.neo4j_client import (
     execute_read_with_bookmark,
     execute_write_query,
 )
+from neo4j.exceptions import AuthError, ServiceUnavailable
 
 
 class TestCreateDriver:

@@ -14,7 +14,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
 from jama_mcp_server_graphrag.core.generation import StreamEvent, StreamEventType
 from jama_mcp_server_graphrag.routes.chat import router
 

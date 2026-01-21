@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from jama_mcp_server_graphrag.token_counter import (
     COST_THRESHOLDS,
     DEFAULT_MODEL,

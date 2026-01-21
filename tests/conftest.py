@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from jama_mcp_server_graphrag.config import AppConfig
 
 if TYPE_CHECKING:

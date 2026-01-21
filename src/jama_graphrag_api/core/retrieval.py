@@ -87,8 +87,8 @@ def create_vector_retriever(
     Returns:
         Configured VectorRetriever instance.
     """
-    from neo4j_graphrag.embeddings import OpenAIEmbeddings  # noqa: PLC0415
-    from neo4j_graphrag.retrievers import VectorRetriever  # noqa: PLC0415
+    from neo4j_graphrag.embeddings import OpenAIEmbeddings
+    from neo4j_graphrag.retrievers import VectorRetriever
 
     embedder = OpenAIEmbeddings(
         model=config.embedding_model,
@@ -330,7 +330,7 @@ async def hybrid_search(
 def _enrich_with_window_context(
     driver: Driver,
     chunk_ids: list[str],
-    window_size: int = 1,  # noqa: ARG001 - reserved for multi-hop expansion
+    window_size: int = 1,
 ) -> dict[str, dict[str, str | None]]:
     """Expand context window using NEXT_CHUNK relationships.
 

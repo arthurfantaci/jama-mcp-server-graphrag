@@ -129,7 +129,7 @@ class PromptCatalog:
 
         try:
             # Import langsmith at runtime (optional dependency)
-            from langsmith import Client  # noqa: PLC0415
+            from langsmith import Client
 
             # Pull with environment tag if not development
             if self.environment != "development":
@@ -352,7 +352,7 @@ def get_catalog() -> PromptCatalog:
     Returns:
         The global PromptCatalog instance.
     """
-    global _catalog  # noqa: PLW0603
+    global _catalog
     if _catalog is None:
         _catalog = PromptCatalog()
     return _catalog
@@ -376,7 +376,7 @@ def initialize_catalog(
     Returns:
         The configured PromptCatalog instance.
     """
-    global _catalog  # noqa: PLW0603
+    global _catalog
 
     kwargs: dict[str, str | int | bool] = {}
     if organization is not None:

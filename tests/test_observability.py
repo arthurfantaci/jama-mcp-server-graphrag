@@ -7,7 +7,6 @@ import os
 from typing import TYPE_CHECKING
 
 import pytest
-
 from jama_mcp_server_graphrag.config import AppConfig
 from jama_mcp_server_graphrag.observability import (
     configure_tracing,

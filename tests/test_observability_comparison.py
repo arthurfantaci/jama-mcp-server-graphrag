@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from jama_mcp_server_graphrag.observability_comparison import (
     PLATFORM_FEATURES,
     Platform,
@@ -212,7 +211,7 @@ class TestRecommendPlatform:
 
         # Both should have reasons but different content
         with_reasons = " ".join(rec_with.reasons).lower()
-        without_reasons = " ".join(rec_without.reasons).lower()
+        " ".join(rec_without.reasons).lower()
 
         if rec_with.recommended == Platform.LANGSMITH:
             assert "trace" in with_reasons or "visualization" in with_reasons

@@ -5,12 +5,12 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from jama_mcp_server_graphrag.agentic.router import (
     RETRIEVER_TOOLS,
     RoutingResult,
     route_query,
 )
+
 from tests.conftest import create_llm_mock
 
 # =============================================================================

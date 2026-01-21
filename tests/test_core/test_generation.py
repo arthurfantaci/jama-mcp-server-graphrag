@@ -5,13 +5,13 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from jama_mcp_server_graphrag.core.generation import (
     StreamEvent,
     StreamEventType,
     generate_answer,
     stream_chat,
 )
+
 from tests.conftest import create_llm_mock
 
 # =============================================================================
@@ -220,7 +220,7 @@ class TestStreamChat:
                 mock_vector_store,
                 "What is traceability?",
             ):
-                events.append(event)  # noqa: PERF401
+                events.append(event)
 
             # First event should be sources
             assert len(events) >= 1
@@ -254,7 +254,7 @@ class TestStreamChat:
                 mock_vector_store,
                 "Test question",
             ):
-                events.append(event)  # noqa: PERF401
+                events.append(event)
 
             # Find token events
             token_events = [e for e in events if e.event_type == StreamEventType.TOKEN]
@@ -288,7 +288,7 @@ class TestStreamChat:
                 mock_vector_store,
                 "Test question",
             ):
-                events.append(event)  # noqa: PERF401
+                events.append(event)
 
             # Last event should be done
             assert len(events) >= 1
@@ -324,7 +324,7 @@ class TestStreamChat:
                 mock_vector_store,
                 "Test",
             ):
-                event_types.append(event.event_type)  # noqa: PERF401
+                event_types.append(event.event_type)
 
             # Check order
             assert event_types[0] == StreamEventType.SOURCES
@@ -358,7 +358,7 @@ class TestStreamChat:
                 "Test",
                 max_sources=7,
             ):
-                events.append(event)  # noqa: PERF401
+                events.append(event)
 
             mock_search.assert_called_once()
             call_kwargs = mock_search.call_args[1]
@@ -395,7 +395,7 @@ class TestStreamChat:
                 "Can you give me an example?",
                 conversation_history=history,
             ):
-                events.append(event)  # noqa: PERF401
+                events.append(event)
 
             # Should complete without error
             assert len(events) >= 2
@@ -428,7 +428,7 @@ class TestStreamChat:
                 mock_vector_store,
                 "Unknown topic",
             ):
-                events.append(event)  # noqa: PERF401
+                events.append(event)
 
             # Should still emit sources (empty), tokens, and done
             assert events[0].event_type == StreamEventType.SOURCES

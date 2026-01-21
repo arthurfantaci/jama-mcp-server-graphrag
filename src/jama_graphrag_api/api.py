@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     - Small connection pool for serverless (5-10 connections)
     """
     # Import neo4j here to allow the module to load without it during discovery
-    from neo4j import GraphDatabase  # noqa: PLC0415
+    from neo4j import GraphDatabase
 
     # Load configuration
     config = get_config()
@@ -135,7 +135,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # Local development
         "http://localhost:5173",  # Vite dev server
-        "https://*.vercel.app",   # Vercel preview deployments
+        "https://*.vercel.app",  # Vercel preview deployments
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -164,7 +164,7 @@ async def root() -> dict[str, str]:
 
 def run() -> None:
     """Run the API server (for local development)."""
-    import uvicorn  # noqa: PLC0415
+    import uvicorn
 
     uvicorn.run(
         "jama_graphrag_api.api:app",

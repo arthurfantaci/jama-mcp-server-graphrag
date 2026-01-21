@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from jama_mcp_server_graphrag.mlflow_tracking import (
     MLFLOW_AVAILABLE,
     MLflowConfig,

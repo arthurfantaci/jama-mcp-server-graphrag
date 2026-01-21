@@ -14,8 +14,6 @@ import time
 from unittest.mock import patch
 
 import pytest
-from langchain_core.prompts import ChatPromptTemplate
-
 from jama_mcp_server_graphrag.prompts import (
     PROMPT_DEFINITIONS,
     TEXT2CYPHER_EXAMPLES,
@@ -36,6 +34,7 @@ from jama_mcp_server_graphrag.prompts.evaluation import (
     create_length_evaluator,
     get_evaluators_for_prompt,
 )
+from langchain_core.prompts import ChatPromptTemplate
 
 # =============================================================================
 # FIXTURES

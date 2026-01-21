@@ -10,8 +10,8 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from jama_mcp_server_graphrag.core.text2cypher import generate_cypher, text2cypher_query
+
 from tests.conftest import create_llm_mock
 
 # =============================================================================

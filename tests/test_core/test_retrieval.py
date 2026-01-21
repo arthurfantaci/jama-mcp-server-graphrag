@@ -12,7 +12,6 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-
 from jama_mcp_server_graphrag.core.retrieval import (
     GraphEnrichmentOptions,
     explore_entity,

@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from jama_mcp_server_graphrag.config import AppConfig
 from jama_mcp_server_graphrag.evaluation.domain_metrics import (
     DOMAIN_TERMS,
