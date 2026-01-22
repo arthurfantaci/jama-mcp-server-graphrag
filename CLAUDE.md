@@ -149,6 +149,8 @@ This project has LangSmith integration for debugging and observability.
 
 ### CLI Tool: langsmith-fetch
 
+**Note:** This is a dev dependency. Install with `uv sync --extra dev`
+
 ```bash
 # Fetch recent traces (after running app with LANGSMITH_TRACING=true)
 uv run langsmith-fetch traces --limit 5 --format json
