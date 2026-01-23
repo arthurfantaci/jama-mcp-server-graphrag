@@ -319,9 +319,7 @@ class TestAcronymSearch:
         assert "normalized_query" in call_args[1]
 
     @pytest.mark.asyncio
-    async def test_lookup_returns_acronym_field(
-        self, mock_driver_with_acronym: MagicMock
-    ) -> None:
+    async def test_lookup_returns_acronym_field(self, mock_driver_with_acronym: MagicMock) -> None:
         """Test that lookup returns the acronym field in result."""
         result = await lookup_term(mock_driver_with_acronym, "Analysis of Alternatives")
 
