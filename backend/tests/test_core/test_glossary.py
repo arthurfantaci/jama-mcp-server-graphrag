@@ -256,7 +256,7 @@ def mock_driver_with_acronym() -> MagicMock:
             [
                 {
                     "term": "Analysis of Alternatives",
-                    "definition": "A systematic evaluation of alternatives to satisfy a requirement.",
+                    "definition": "A systematic evaluation of alternatives.",
                     "acronym": "AoA",
                     "url": "https://example.com/glossary#aoa",
                     "term_id": "term-aoa",
